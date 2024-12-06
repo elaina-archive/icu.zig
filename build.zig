@@ -2,7 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 const fs = std.fs;
 
-fn collectSources(b: *std.Build, path: std.Build.LazyPath) []const []const u8 {
+fn collectSources(b: *std.Build, path: std.Build.LazyPath, extensions: []const []const u8) []const []const u8 {
     const p = path.getPath(b);
 
     var dir = fs.openDirAbsolute(p, .{
@@ -19,8 +19,10 @@ fn collectSources(b: *std.Build, path: std.Build.LazyPath) []const []const u8 {
 
         const ext = fs.path.extension(entry.name);
 
-        if (mem.eql(u8, ext, ".cpp") or mem.eql(u8, ext, ".c")) {
-            list.append(b.allocator.dupe(u8, entry.name) catch @panic("OOM")) catch @panic("OOM");
+        for (extensions) |e| {
+            if (mem.eql(u8, ext[1..], e)) {
+                list.append(b.allocator.dupe(u8, entry.name) catch @panic("OOM")) catch @panic("OOM");
+            }
         }
     }
 
@@ -47,11 +49,13 @@ pub fn build(b: *std.Build) void {
 
     icui18n.addCSourceFiles(.{
         .root = icu_dep.path("icu4c/source/i18n"),
-        .files = collectSources(b, icu_dep.path("icu4c/source/i18n")),
+        .files = collectSources(b, icu_dep.path("icu4c/source/i18n"), &.{ "c", "cpp" }),
         .flags = &.{
             "-DU_I18N_IMPLEMENTATION=1",
         },
     });
+
+    icui18n.installHeadersDirectory(icu_dep.path("icu4c/source/i18n/unicode"), "unicode", .{});
 
     icui18n.addIncludePath(icu_dep.path("icu4c/source/common"));
     icui18n.addIncludePath(icu_dep.path("icu4c/source/i18n"));
@@ -70,11 +74,13 @@ pub fn build(b: *std.Build) void {
 
     icuuc.addCSourceFiles(.{
         .root = icu_dep.path("icu4c/source/common"),
-        .files = collectSources(b, icu_dep.path("icu4c/source/common")),
+        .files = collectSources(b, icu_dep.path("icu4c/source/common"), &.{ "c", "cpp" }),
         .flags = &.{
             "-DU_COMMON_IMPLEMENTATION=1",
         },
     });
+
+    icuuc.installHeadersDirectory(icu_dep.path("icu4c/source/common/unicode"), "unicode", .{});
 
     icuuc.addIncludePath(icu_dep.path("icu4c/source/common"));
     b.installArtifact(icuuc);
