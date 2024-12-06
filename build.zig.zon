@@ -1,0 +1,11 @@
+.{
+    .name = "icu",
+    .version = "74.2.0",
+    .paths = .{"."},
+    .dependencies = .{
+        .icu = .{
+            .url = "https://github.com/unicode-org/icu/archive/2d029329c82c7792b985024b2bdab5fc7278fbc8.tar.gz",
+            .hash = "1220030e7e344c30296702675e7bec99451d5f7c57c801f12b06139b864ba319d604",
+        },
+    },
+}
