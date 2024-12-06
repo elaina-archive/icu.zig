@@ -9,6 +9,10 @@
       url = "github:ziglang/zig?ref=pull/20511/head";
       flake = false;
     };
+    zon2nix = {
+      url = "github:MidstallSoftware/zon2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -17,6 +21,7 @@
       nixpkgs,
       systems,
       flake-utils,
+      zon2nix,
       ...
     }@inputs:
     let
@@ -50,6 +55,37 @@
 
             nativeBuildInputs = [
               pkgs.zig
+              pkgs.zig.hook
+            ];
+
+            outputs = [ "out" "dev" ];
+
+            postPatch = ''
+              ln -s ${callPackage ./deps.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
+            '';
+
+            postInstall = ''
+              patchelf --set-rpath $out/lib $out/bin/*
+            '';
+          };
+
+          zon2nix = stdenv.mkDerivation {
+            pname = "zon2nix";
+            version = "0.1.2";
+
+            src = lib.cleanSource inputs.zon2nix;
+
+            nativeBuildInputs = [
+              pkgs.zig
+              pkgs.zig.hook
+            ];
+
+            zigBuildFlags = [
+              "-Dnix=${lib.getExe nix}"
+            ];
+
+            zigCheckFlags = [
+              "-Dnix=${lib.getExe nix}"
             ];
           };
         };
@@ -67,7 +103,11 @@
         };
 
         devShells = {
-          default = pkgs.icu-zig;
+          default = pkgs.icu-zig.overrideAttrs (finalAttrs: p: {
+            nativeBuildInputs = p.nativeBuildInputs ++ [
+              pkgs.zon2nix
+            ];
+          });
         };
 
         legacyPackages = pkgs;

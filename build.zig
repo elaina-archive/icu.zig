@@ -72,6 +72,10 @@ pub fn build(b: *std.Build) void {
         .linkage = linkage,
     });
 
+    icuuc.addCSourceFile(.{
+        .file = icu_dep.path("icu4c/source/stubdata/stubdata.cpp"),
+    });
+
     icuuc.addCSourceFiles(.{
         .root = icu_dep.path("icu4c/source/common"),
         .files = collectSources(b, icu_dep.path("icu4c/source/common"), &.{ "c", "cpp" }),
@@ -84,4 +88,77 @@ pub fn build(b: *std.Build) void {
 
     icuuc.addIncludePath(icu_dep.path("icu4c/source/common"));
     b.installArtifact(icuuc);
+
+    const genccode = b.addExecutable(.{
+        .name = "genccode",
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    genccode.addCSourceFile(.{
+        .file = icu_dep.path("icu4c/source/tools/genccode/genccode.c"),
+    });
+
+    genccode.addCSourceFiles(.{
+        .root = icu_dep.path("icu4c/source/tools/toolutil"),
+        .files = &.{
+            "filestrm.cpp",
+            "pkg_genc.cpp",
+            "toolutil.cpp",
+            "ucbuf.cpp",
+            "uoptions.cpp",
+        },
+        .flags = &.{
+            "-DU_TOOLUTIL_IMPLEMENTATION=1",
+        },
+    });
+
+    genccode.addIncludePath(icu_dep.path("icu4c/source/tools/toolutil"));
+    genccode.addIncludePath(icu_dep.path("icu4c/source/common"));
+
+    genccode.linkLibCpp();
+    genccode.linkLibrary(icuuc);
+
+    b.installArtifact(genccode);
+
+    const icupkg = b.addExecutable(.{
+        .name = "icupkg",
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    icupkg.addCSourceFile(.{
+        .file = icu_dep.path("icu4c/source/tools/icupkg/icupkg.cpp"),
+    });
+
+    icupkg.addCSourceFiles(.{
+        .root = icu_dep.path("icu4c/source/tools/toolutil"),
+        .files = &.{
+            "filestrm.cpp",
+            "pkg_genc.cpp",
+            "toolutil.cpp",
+            "ucbuf.cpp",
+            "uoptions.cpp",
+            "pkg_icu.cpp",
+            "package.cpp",
+            "swapimpl.cpp",
+            "uparse.cpp",
+            "pkgitems.cpp",
+        },
+        .flags = &.{
+            "-DU_TOOLUTIL_IMPLEMENTATION=1",
+        },
+    });
+
+    icupkg.addIncludePath(icu_dep.path("icu4c/source/tools/toolutil"));
+    icupkg.addIncludePath(icu_dep.path("icu4c/source/common"));
+    icupkg.addIncludePath(icu_dep.path("icu4c/source/i18n"));
+
+    icupkg.linkLibCpp();
+    icupkg.linkLibrary(icui18n);
+    icupkg.linkLibrary(icuuc);
+
+    b.installArtifact(icupkg);
 }
