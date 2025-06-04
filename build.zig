@@ -36,16 +36,19 @@ pub fn build(b: *std.Build) void {
 
     const icu_dep = b.dependency("icu", .{});
 
-    const icui18n = std.Build.Step.Compile.create(b, .{
-        .name = "icui18n",
-        .root_module = .{
+    var icui18n = if (linkage == .static)
+        b.addStaticLibrary(.{
+            .name = "icui18n",
             .target = target,
             .optimize = optimize,
-            .link_libcpp = true,
-        },
-        .kind = .lib,
-        .linkage = linkage,
-    });
+        })
+    else
+        b.addSharedLibrary(.{
+            .name = "icui18n",
+            .target = target,
+            .optimize = optimize,
+        });
+    icui18n.linkLibCpp();
 
     icui18n.addCSourceFiles(.{
         .root = icu_dep.path("icu4c/source/i18n"),
@@ -61,16 +64,19 @@ pub fn build(b: *std.Build) void {
     icui18n.addIncludePath(icu_dep.path("icu4c/source/i18n"));
     b.installArtifact(icui18n);
 
-    const icuuc = std.Build.Step.Compile.create(b, .{
-        .name = "icuuc",
-        .root_module = .{
+    const icuuc = if (linkage == .static)
+        b.addStaticLibrary(.{
+            .name = "icuuc",
             .target = target,
             .optimize = optimize,
-            .link_libcpp = true,
-        },
-        .kind = .lib,
-        .linkage = linkage,
-    });
+        })
+    else
+        b.addSharedLibrary(.{
+            .name = "icuuc",
+            .target = target,
+            .optimize = optimize,
+        });
+    icuuc.linkLibCpp();
 
     icuuc.addCSourceFile(.{
         .file = icu_dep.path("icu4c/source/stubdata/stubdata.cpp"),

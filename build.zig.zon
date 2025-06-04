@@ -1,7 +1,8 @@
 .{
-    .name = "icu",
+    .name = .icu,
     .version = "74.2.0",
     .paths = .{"."},
+    .fingerprint = 0xd6f8946a6da9cbab,
     .dependencies = .{
         .icu = .{
             .url = "https://github.com/unicode-org/icu/archive/2d029329c82c7792b985024b2bdab5fc7278fbc8.tar.gz",
